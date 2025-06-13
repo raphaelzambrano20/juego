@@ -1,202 +1,642 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Juego de Memoria Anime</title>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
-  <style>
-    * {
-      box-sizing: border-box;
-    }
-    body {
-      font-family: 'Press Start 2P', cursive;
-      background: linear-gradient(to right, #2b2d42, #8d99ae);
-      color: #edf2f4;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      flex-direction: column;
-    }
-    #startScreen {
-      text-align: center;
-    }
-    #gameBoard {
-      display: none;
-      grid-template-columns: repeat(5, 100px);
-      grid-gap: 10px;
-      margin-top: 20px;
-    }
-    .card {
-      width: 100px;
-      height: 100px;
-      background: #ef233c;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 0;
-      cursor: pointer;
-      border-radius: 8px;
-      transition: transform 0.3s;
-      overflow: hidden;
-    }
-    .card img {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: none;
-    }
-    .flipped img {
-      display: block;
-    }
-    #ranking {
-      margin-top: 20px;
-      font-size: 12px;
-      text-align: center;
-    }
-    #timer {
-      margin-top: 15px;
-      font-size: 14px;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Juego de Memoria Anime 3D</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <style>
+        /* Estilos Generales y Reseteo */
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Press Start 2P', cursive;
+            background: linear-gradient(to right, #2b2d42, #8d99ae);
+            color: #edf2f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            flex-direction: column;
+            gap: 20px; /* Espacio entre secciones */
+            overflow: hidden; /* Oculta el scroll si la animación se desborda */
+            position: relative; /* Necesario para posicionar el fondo animado */
+        }
+
+        /* Animación de Fondo 3D */
+        .background-animation {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden; /* Asegura que las estrellas no se desborden */
+            background-color: #2b2d42; /* Color base del espacio */
+            z-index: -1; /* Asegura que esté detrás de todo el contenido */
+        }
+
+        .star {
+            position: absolute;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+            opacity: 0;
+            animation: starTwinkle 20s infinite ease-in-out alternate;
+        }
+
+        @keyframes starTwinkle {
+            0% { opacity: 0; transform: scale(0.5); }
+            50% { opacity: 0.8; transform: scale(1.2); }
+            100% { opacity: 0; transform: scale(0.5); }
+        }
+
+        /* Estilos de Pantallas (Inicio, Fin de Juego) */
+        #startScreen, #gameOverScreen {
+            background-color: #34495e;
+            padding: 40px;
+            border-radius: 15px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            animation: fadeIn 0.8s ease-out; /* Animación de entrada */
+            z-index: 1; /* Asegura que esté por encima de la animación de fondo */
+        }
+
+        h1 {
+            color: #ee6c4d;
+            margin-bottom: 25px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Estilos de Inputs, Botones y Selects */
+        input[type="text"], button, select {
+            padding: 12px 20px;
+            margin: 10px;
+            border-radius: 8px;
+            border: none;
+            font-family: 'Press Start 2P', cursive;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+        input[type="text"] {
+            background-color: #e0f2f4;
+            color: #2b2d42;
+            width: 250px;
+        }
+        button {
+            background-color: #98c1d9;
+            color: #2b2d42;
+        }
+        button:hover {
+            background-color: #8d99ae;
+            transform: translateY(-2px);
+        }
+        select {
+            background-color: #e0f2f4;
+            color: #2b2d42;
+        }
+
+        /* Información del Juego (Tiempo, Movimientos, Botón Reiniciar) */
+        #gameInfo {
+            display: flex;
+            justify-content: space-between;
+            align-items: center; /* Centrar verticalmente los elementos */
+            width: 100%;
+            max-width: 650px; /* Ajusta este valor si cambias el tamaño máximo del tablero */
+            margin-bottom: 10px;
+            font-size: 1.1em;
+            padding: 0 10px;
+            z-index: 1; /* Asegura que esté por encima de la animación de fondo */
+        }
+        #gameInfo button {
+            margin: 0; /* Ajusta márgenes para que no desentone con los otros elementos */
+            background-color: #ee6c4d; /* Color distinto para el botón de reinicio */
+            color: #edf2f4;
+        }
+        #gameInfo button:hover {
+            background-color: #d1495b;
+        }
+
+        /* Tablero de Juego */
+        #gameBoard {
+            display: none; /* Oculto por defecto */
+            grid-gap: 12px;
+            margin-top: 20px;
+            perspective: 1000px; /* Para el efecto 3D flip en todo el tablero */
+            animation: fadeIn 0.8s ease-out; /* Animación de entrada */
+            z-index: 1; /* Asegura que esté por encima de la animación de fondo */
+        }
+        .card {
+            width: 100px;
+            height: 100px;
+            background: #ef233c; /* Color de la parte trasera de la carta */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0;
+            cursor: pointer;
+            border-radius: 10px;
+            /* La transición se mantiene en card-inner para el volteo 3D */
+            transform-style: preserve-3d; /* Para el efecto 3D completo */
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            /* Sutil elevación y rotación para el efecto 3D */
+            transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+        }
+        .card:hover {
+            transform: translateY(-5px) rotateX(2deg) rotateY(2deg); /* Efecto hover 3D */
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Contenedor interno para el volteo 3D */
+        .card .card-inner {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Bounce effect for flip */
+        }
+
+        /* Estado "volteado" de la carta */
+        .card.flipped .card-inner {
+            transform: rotateY(180deg);
+        }
+
+        /* Caras de la carta (frente y dorso) */
+        .card-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden; /* Oculta la parte trasera de la carta cuando se voltea */
+            border-radius: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            border: 2px solid #5d6d7e; /* Borde para las cartas */
+        }
+        .card-back {
+            background: #ef233c; /* Color de la parte trasera */
+            color: #edf2f4;
+            font-size: 3em;
+            transform: rotateY(0deg);
+        }
+        .card-front {
+            background: #e0f2f4; /* Color del frente */
+            transform: rotateY(180deg);
+        }
+        .card-front img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* Animaciones */
+        /* Para cartas que hacen match */
+        .card.match {
+            animation: popOut 0.5s ease-out forwards;
+            pointer-events: none; /* Deshabilita clics en cartas ya encontradas */
+        }
+        @keyframes popOut {
+            0% { transform: scale(1) rotateY(0deg); opacity: 1; }
+            50% { transform: scale(1.2) rotateY(360deg); opacity: 1; } /* Más dramático */
+            100% { transform: scale(0) rotateY(720deg); opacity: 0; } /* Gira y desaparece */
+        }
+        /* Para la aparición de elementos */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Estilos del Ranking */
+        #ranking {
+            margin-top: 20px;
+            font-size: 0.9em;
+            text-align: center;
+            background-color: #34495e;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            max-width: 400px;
+            width: 90%;
+            animation: fadeIn 0.8s ease-out; /* Animación de entrada */
+            z-index: 1; /* Asegura que esté por encima de la animación de fondo */
+        }
+        #ranking h2 {
+            color: #e0f2f4;
+            margin-bottom: 15px;
+            font-size: 1.8em;
+        }
+        #ranking ol {
+            list-style: none;
+            padding: 0;
+        }
+        #ranking li {
+            background-color: #5d6d7e;
+            margin-bottom: 8px;
+            padding: 8px 15px;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: #edf2f4;
+            font-size: 1.1em;
+        }
+        #ranking li span {
+            font-weight: bold;
+            color: #98c1d9;
+        }
+
+        /* Estilos de la Pantalla de Fin de Juego */
+        #gameOverScreen {
+            display: none; /* Oculto por defecto */
+            animation: fadeIn 0.8s ease-out; /* Animación de entrada */
+            z-index: 1; /* Asegura que esté por encima de la animación de fondo */
+        }
+        #gameOverScreen h2 {
+            color: #ee6c4d;
+            font-size: 2em;
+            margin-bottom: 20px;
+        }
+        #gameOverScreen p {
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        #gameOverScreen button {
+            background-color: #ee6c4d;
+            color: #edf2f4;
+        }
+        #gameOverScreen button:hover {
+            background-color: #d1495b;
+        }
+
+        /* Tamaños de la Grilla (según dificultad) */
+        .grid-4x4 {
+            grid-template-columns: repeat(4, 100px);
+        }
+        .grid-5x4 {
+            grid-template-columns: repeat(5, 100px);
+        }
+        .grid-6x5 {
+            grid-template-columns: repeat(6, 100px);
+        }
+    </style>
 </head>
 <body>
-  <div id="startScreen">
-    <h1>Memoria Anime</h1>
-    <input type="text" id="playerName" placeholder="Tu nombre...">
-    <button onclick="startGame()">Jugar</button>
-  </div>
-  <div id="timer"></div>
-  <div id="gameBoard"></div>
-  <div id="ranking"></div>
+    <div class="background-animation" id="backgroundAnimation">
+    </div>
 
-  <audio id="flipSound" src="https://www.myinstants.com/media/sounds/pop-up-katana.mp3"></audio>
-  <audio id="matchSound" src="https://www.myinstants.com/media/sounds/smw_coin.wav"></audio>
-  <audio id="winSound" src="https://www.myinstants.com/media/sounds/stage-clear-super-mario-world.mp3"></audio>
+    <div id="startScreen">
+        <h1>Memoria Anime</h1>
+        <input type="text" id="playerName" placeholder="Tu nombre..." maxlength="15">
+        <select id="difficulty">
+            <option value="easy">Fácil (16 cartas)</option>
+            <option value="medium" selected>Normal (20 cartas)</option>
+            <option value="hard">Difícil (30 cartas)</option>
+        </select>
+        <button onclick="startGame()">Jugar</button>
+    </div>
 
-  <script>
-    const images = [
-      'imagenes/naruto.png',
-      'imagenes/luffy.jpg',
-      'imagenes/goku.jpg',
-      'imagenes/saitama.jpg',
-      'imagenes/ichigo.jpg',
-      'imagenes/tanjiro.jpg',
-      'imagenes/eren.jpg',
-      'imagenes/itachi.jpg',
-      'imagenes/kakashi.jpg',
-      'imagenes/levi.jpg'
-    ];
-    let firstCard = null;
-    let secondCard = null;
-    let lockBoard = false;
-    let playerName = '';
-    let startTime;
-    let timerInterval;
-    const ranking = JSON.parse(localStorage.getItem('ranking')) || [];
+    <div id="gameInfo" style="display: none;">
+        <div id="timer">Tiempo: 0s</div>
+        <div id="moves">Movimientos: 0</div>
+        <button onclick="confirmRestart()">Reiniciar</button> 
+    </div>
 
-    function startGame() {
-      playerName = document.getElementById('playerName').value.trim();
-      if (!playerName) {
-        alert('Por favor ingresa tu nombre.');
-        return;
-      }
-      document.getElementById('startScreen').style.display = 'none';
-      const board = document.getElementById('gameBoard');
-      board.style.display = 'grid';
-      const cards = [...images, ...images];
-      shuffle(cards);
-      board.innerHTML = '';
-      cards.forEach((src, index) => {
-        const card = document.createElement('div');
-        card.classList.add('card');
-        card.dataset.image = src;
-        card.innerHTML = `<img src="${src}" alt="anime">`;
-        card.addEventListener('click', () => flipCard(card));
-        board.appendChild(card);
-      });
-      startTimer();
-    }
+    <div id="gameBoard"></div>
+    <div id="ranking"></div>
 
-    function shuffle(array) {
-      for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [array[i], array[j]] = [array[j], array[i]];
-      }
-    }
+    <div id="gameOverScreen">
+        <h2 id="gameOverTitle">¡Juego Terminado!</h2>
+        <p id="finalTime"></p>
+        <p id="finalMoves"></p>
+        <button onclick="restartGame()">Jugar de Nuevo</button>
+        <button onclick="backToStartScreen()">Menú Principal</button>
+    </div>
 
-    function flipCard(card) {
-      if (lockBoard || card === firstCard || card.classList.contains('flipped')) return;
-      document.getElementById('flipSound').play();
-      card.classList.add('flipped');
-      if (!firstCard) {
-        firstCard = card;
-      } else {
-        secondCard = card;
-        checkForMatch();
-      }
-    }
+    <audio id="flipSound" src="https://www.myinstants.com/media/sounds/pop-up-katana.mp3"></audio>
+    <audio id="matchSound" src="https://www.myinstants.com/media/sounds/level-up-sound-effect.mp3"></audio> 
+    <audio id="winSound" src="https://www.myinstants.com/media/sounds/stage-clear-super-mario-world.mp3"></audio>
+    <audio id="mismatchSound" src="https://www.myinstants.com/media/sounds/error.mp3"></audio> 
+    <audio id="startSound" src="https://www.myinstants.com/media/sounds/super-mario-64-here-we-go-sound-effect.mp3"></audio> 
 
-    function checkForMatch() {
-      const isMatch = firstCard.dataset.image === secondCard.dataset.image;
-      if (isMatch) {
-        document.getElementById('matchSound').play();
-        disableCards();
-        if (document.querySelectorAll('.flipped').length === images.length * 2) {
-          clearInterval(timerInterval);
-          setTimeout(() => {
-            document.getElementById('winSound').play();
-            const timeTaken = Math.floor((Date.now() - startTime) / 1000);
-            ranking.push({ name: playerName, time: timeTaken });
-            ranking.sort((a, b) => a.time - b.time);
-            localStorage.setItem('ranking', JSON.stringify(ranking));
-            showRanking();
-            alert(`¡Felicidades ${playerName}! Completaste el juego en ${timeTaken} segundos.`);
-            location.reload();
-          }, 1000);
+    <script>
+        // Array de todas las imágenes disponibles
+        // IMPORTANTE: Reemplaza estos placeholders con las rutas a tus imágenes de anime reales
+        const allImages = [
+            'imagenes/naruto.png', 
+            'imagenes/luffy.jpg',
+            'imagenes/goku.jpg',
+            'imagenes/saitama.jpg',
+            'imagenes/ichigo.jpg',
+            'imagenes/tanjiro.jpg',
+            'imagenes/eren.jpg',
+            'imagenes/itachi.jpg',
+            'imagenes/kakashi.jpg',
+            'imagenes/levi.jpg',
+            'imagenes/killua.jpg',
+            'imagenes/sanji.jpg',
+            'imagenes/zoro.jpg',
+            'imagenes/vegeta.jpg',
+            'imagenes/gon.jpg'
+        ];
+        // Ejemplo de cómo usarías tus imágenes de anime:
+        // const allImages = [
+        //     'imagenes/naruto.png',
+        //     'imagenes/luffy.jpg',
+        //     'imagenes/goku.jpg',
+        //     'imagenes/saitama.jpg',
+        //     'imagenes/ichigo.jpg',
+        //     'imagenes/tanjiro.jpg',
+        //     'imagenes/eren.jpg',
+        //     'imagenes/itachi.jpg',
+        //     'imagenes/kakashi.jpg',
+        //     'imagenes/levi.jpg',
+        //     'imagenes/killua.jpg', 
+        //     'imagenes/gon.jpg',
+        //     'imagenes/zoro.jpg',
+        //     'imagenes/sanji.jpg',
+        //     'imagenes/vegeta.jpg',
+        //     'imagenes/sakura.jpg' 
+        // ];
+
+        let cardsToUse = []; // Imágenes seleccionadas para la dificultad actual
+        let firstCard = null;
+        let secondCard = null;
+        let lockBoard = false;
+        let playerName = '';
+        let startTime;
+        let timerInterval;
+        let moves = 0;
+        let matchedPairs = 0;
+        let gameDifficulty = 'medium'; // Dificultad por defecto
+        // La variable 'ranking' ahora se recargará cada vez que se muestre el ranking
+        let ranking = []; 
+
+        // Función para generar estrellas para la animación de fondo 3D
+        function generateStars() {
+            const backgroundAnimation = document.getElementById('backgroundAnimation');
+            // Limpiar estrellas existentes antes de generar nuevas (útil si se reinicia la pantalla)
+            backgroundAnimation.innerHTML = ''; 
+            const numStars = 100; // Puedes ajustar la cantidad de estrellas
+            for (let i = 0; i < numStars; i++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                const size = Math.random() * 3 + 1; // Estrellas de 1px a 4px
+                star.style.width = `${size}px`;
+                star.style.height = `${size}px`;
+                star.style.top = `${Math.random() * 100}%`;
+                star.style.left = `${Math.random() * 100}%`;
+                star.style.animationDelay = `${Math.random() * 10}s`; // Retraso aleatorio
+                star.style.animationDuration = `${Math.random() * 10 + 10}s`; // Duración aleatoria
+                backgroundAnimation.appendChild(star);
+            }
         }
-      } else {
-        unflipCards();
-      }
-    }
 
-    function disableCards() {
-      firstCard.removeEventListener('click', flipCard);
-      secondCard.removeEventListener('click', flipCard);
-      resetBoard();
-    }
+        // Función para configurar la dificultad del juego
+        function setGameDifficulty(difficulty) {
+            gameDifficulty = difficulty;
+            switch (difficulty) {
+                case 'easy':
+                    // 8 pares = 16 cartas (4x4)
+                    cardsToUse = allImages.slice(0, 8);
+                    document.getElementById('gameBoard').className = 'grid-4x4';
+                    break;
+                case 'medium':
+                    // 10 pares = 20 cartas (5x4)
+                    cardsToUse = allImages.slice(0, 10);
+                    document.getElementById('gameBoard').className = 'grid-5x4';
+                    break;
+                case 'hard':
+                    // 15 pares = 30 cartas (6x5)
+                    cardsToUse = allImages.slice(0, 15);
+                    document.getElementById('gameBoard').className = 'grid-6x5';
+                    break;
+            }
+        }
 
-    function unflipCards() {
-      lockBoard = true;
-      setTimeout(() => {
-        firstCard.classList.remove('flipped');
-        secondCard.classList.remove('flipped');
-        resetBoard();
-      }, 1000);
-    }
+        // Función para iniciar el juego
+        function startGame() {
+            playerName = document.getElementById('playerName').value.trim();
+            if (!playerName) {
+                alert('Por favor ingresa tu nombre.');
+                return;
+            }
 
-    function resetBoard() {
-      [firstCard, secondCard, lockBoard] = [null, null, false];
-    }
+            document.getElementById('startSound').play(); // Sonido al iniciar el juego
+            gameDifficulty = document.getElementById('difficulty').value;
+            setGameDifficulty(gameDifficulty);
 
-    function startTimer() {
-      startTime = Date.now();
-      const timerDisplay = document.getElementById('timer');
-      timerInterval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        timerDisplay.textContent = `Tiempo: ${elapsed}s`;
-      }, 1000);
-    }
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameInfo').style.display = 'flex';
+            document.getElementById('gameBoard').style.display = 'grid';
+            document.getElementById('gameOverScreen').style.display = 'none'; // Ocultar pantalla de fin de juego
 
-    function showRanking() {
-      const rankingDiv = document.getElementById('ranking');
-      rankingDiv.innerHTML = `<h2>Ranking</h2><ol>${ranking.map(entry => `<li>${entry.name} - ${entry.time}s</li>`).join('')}</ol>`;
-    }
+            resetGameState(); // Reiniciar todas las variables del juego
+            
+            const board = document.getElementById('gameBoard');
+            const cards = [...cardsToUse, ...cardsToUse];
+            shuffle(cards); // Mezclar las cartas
+            board.innerHTML = ''; // Limpiar el tablero anterior
 
-    showRanking();
-  </script>
+            // Crear y añadir las cartas al tablero
+            cards.forEach((src, index) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.image = src; // Guardar la ruta de la imagen en un atributo de datos
+                card.innerHTML = `
+                    <div class="card-inner">
+                        <div class="card-face card-back">?</div>
+                        <div class="card-face card-front">
+                            <img src="${src}" alt="anime">
+                        </div>
+                    </div>
+                `;
+                card.addEventListener('click', () => flipCard(card)); // Añadir el evento click
+                board.appendChild(card);
+            });
+            startTimer(); // Iniciar el temporizador
+            // showRanking(); // No es necesario aquí, se mostrará al final o al inicio
+        }
+
+        // Función para reiniciar el estado del juego
+        function resetGameState() {
+            firstCard = null;
+            secondCard = null;
+            lockBoard = false;
+            moves = 0;
+            matchedPairs = 0;
+            document.getElementById('moves').textContent = `Movimientos: ${moves}`;
+            clearInterval(timerInterval); // Limpiar cualquier temporizador existente
+            document.getElementById('timer').textContent = `Tiempo: 0s`;
+            // Remover la clase 'match' de todas las cartas para que vuelvan a ser clicables y visibles
+            document.querySelectorAll('.card').forEach(card => {
+                card.classList.remove('flipped', 'match');
+                card.addEventListener('click', () => flipCard(card)); // Re-habilitar el evento click
+                card.querySelector('.card-inner').style.transform = ''; // Resetear la rotación si quedó girada
+            });
+        }
+
+        // Función para mezclar un array (algoritmo de Fisher-Yates)
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        // Función para voltear una carta
+        function flipCard(card) {
+            // Evitar voltear si el tablero está bloqueado, es la misma carta o ya está volteada/encontrada
+            if (lockBoard || card === firstCard || card.classList.contains('flipped') || card.classList.contains('match')) return;
+
+            document.getElementById('flipSound').play(); // Sonido al voltear
+            card.classList.add('flipped');
+
+            if (!firstCard) {
+                firstCard = card;
+            } else {
+                secondCard = card;
+                moves++;
+                document.getElementById('moves').textContent = `Movimientos: ${moves}`;
+                checkForMatch(); // Comprobar si hay coincidencia
+            }
+        }
+
+        // Función para comprobar si hay coincidencia entre las dos cartas volteadas
+        function checkForMatch() {
+            const isMatch = firstCard.dataset.image === secondCard.dataset.image;
+            if (isMatch) {
+                document.getElementById('matchSound').play(); // Sonido de coincidencia 
+                // Add the 'match' class which triggers the popOut animation
+                firstCard.classList.add('match');
+                secondCard.classList.add('match');
+                // Use a timeout to allow the animation to start before removing event listeners
+                setTimeout(() => {
+                    firstCard.removeEventListener('click', flipCard);
+                    secondCard.removeEventListener('click', flipCard);
+                    resetBoard(); // Resetear las variables de las cartas
+                    matchedPairs++;
+                    if (matchedPairs === cardsToUse.length) { // Corrected: Compare with cardsToUse.length (number of unique images/pairs)
+                        clearInterval(timerInterval); // Detener el temporizador
+                        const timeTaken = Math.floor((Date.now() - startTime) / 1000); // Capturar el tiempo final
+                        
+                        // Almacenar el ranking antes de mostrar la pantalla de fin de juego
+                        let currentRanking = JSON.parse(localStorage.getItem('ranking')) || [];
+                        currentRanking.push({ name: playerName, time: timeTaken, moves: moves, difficulty: gameDifficulty });
+                        currentRanking.sort((a, b) => a.time - b.time || a.moves - b.moves);
+                        localStorage.setItem('ranking', JSON.stringify(currentRanking));
+                        
+                        document.getElementById('winSound').play(); // Sonido de victoria
+                        showGameOverScreen(timeTaken, moves); // Mostrar pantalla de fin de juego con los resultados
+                    }
+                }, 500); // Give a bit of time for the animation to be visible
+            } else {
+                document.getElementById('mismatchSound').play(); // Sonido de no coincidencia
+                unflipCards(); // Voltear las cartas de nuevo
+            }
+        }
+
+        // Función para deshabilitar las cartas coincidentes (now handled by adding 'match' class)
+        // function disableCards() {
+        //     firstCard.removeEventListener('click', flipCard);
+        //     secondCard.removeEventListener('click', flipCard);
+        //     resetBoard(); // Resetear las variables de las cartas
+        // }
+
+        // Función para voltear las cartas no coincidentes de nuevo
+        function unflipCards() {
+            lockBoard = true; // Bloquear el tablero temporalmente
+            setTimeout(() => {
+                firstCard.classList.remove('flipped');
+                secondCard.classList.remove('flipped');
+                resetBoard(); // Resetear las variables de las cartas
+            }, 1000); // Tiempo para que el jugador vea las cartas antes de que se volteen
+        }
+
+        // Función para resetear las variables de las cartas seleccionadas
+        function resetBoard() {
+            [firstCard, secondCard, lockBoard] = [null, null, false];
+        }
+
+        // Función para iniciar el temporizador
+        function startTimer() {
+            startTime = Date.now();
+            const timerDisplay = document.getElementById('timer');
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                timerDisplay.textContent = `Tiempo: ${elapsed}s`;
+            }, 1000);
+        }
+
+        // Función para mostrar el ranking
+        function showRanking() {
+            // Recargar el ranking del localStorage cada vez que se llama a esta función
+            ranking = JSON.parse(localStorage.getItem('ranking')) || []; 
+
+            const rankingDiv = document.getElementById('ranking');
+            // Filtrar y mostrar el top 10 del ranking para la dificultad actual
+            const filteredRanking = ranking.filter(entry => entry.difficulty === gameDifficulty)
+                                            .sort((a, b) => a.time - b.time || a.moves - b.moves)
+                                            .slice(0, 10); // Mostrar solo los 10 mejores
+
+            if (filteredRanking.length > 0) {
+                rankingDiv.innerHTML = `
+                    <h2>Ranking (${gameDifficulty.charAt(0).toUpperCase() + gameDifficulty.slice(1)})</h2>
+                    <ol>
+                        ${filteredRanking.map((entry, index) => 
+                            `<li>${index + 1}. ${entry.name} <span>${entry.time}s / ${entry.moves} movs</span></li>`
+                        ).join('')}
+                    </ol>
+                `;
+                rankingDiv.style.display = 'block';
+            } else {
+                rankingDiv.innerHTML = `<h2>Ranking (${gameDifficulty.charAt(0).toUpperCase() + gameDifficulty.slice(1)})</h2><p>¡Sé el primero en el ranking!</p>`;
+                rankingDiv.style.display = 'block';
+            }
+        }
+
+        // Función para mostrar la pantalla de fin de juego
+        function showGameOverScreen(timeTaken, totalMoves) {
+            document.getElementById('gameBoard').style.display = 'none';
+            document.getElementById('gameInfo').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'block';
+            document.getElementById('finalTime').textContent = `Tiempo: ${timeTaken} segundos`;
+            document.getElementById('finalMoves').textContent = `Movimientos: ${totalMoves}`;
+            showRanking(); // Ahora showRanking recargará los datos y los mostrará
+        }
+
+        // Función para reiniciar el juego (desde la pantalla de fin de juego)
+        function restartGame() {
+            startGame(); // Simplemente reinicia el juego con la configuración actual
+        }
+
+        // Función para volver a la pantalla de inicio
+        function backToStartScreen() {
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('gameBoard').style.display = 'none';
+            document.getElementById('gameInfo').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'block';
+            // Al volver a la pantalla de inicio, también actualizamos el ranking para la dificultad actual
+            showRanking(); 
+        }
+
+        // Función para confirmar el reinicio (para el botón en juego)
+        function confirmRestart() {
+            if (confirm('¿Estás seguro de que quieres reiniciar el juego? Tu progreso se perderá.')) {
+                startGame(); // Reinicia el juego si el usuario confirma
+            }
+        }
+
+        // Llama a esta función al cargar la página para mostrar el ranking inicial
+        document.addEventListener('DOMContentLoaded', () => {
+            setGameDifficulty(document.getElementById('difficulty').value); // Configura la dificultad inicial para el ranking
+            showRanking(); // Muestra el ranking al cargar la página por primera vez
+            generateStars(); // Generar las estrellas para el fondo
+        });
+    </script>
 </body>
 </html>
